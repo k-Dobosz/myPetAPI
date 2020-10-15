@@ -2,7 +2,9 @@ const express = require('express')
 const app = express()
 const logger = require('morgan')
 const bodyParser = require('body-parser')
-const db = require('./api/db')
+const db = require('./api/db')()
+
+const userRouter = require('./api/routes/users')
 
 app.use(logger('dev'))
 app.use(bodyParser.json())
@@ -17,6 +19,8 @@ app.use((req, res, next) => {
     }
     next()
 })
+
+app.use('/api/users', userRouter)
 
 app.use((req, res, next) => {
     const error = new Error('Not found')
