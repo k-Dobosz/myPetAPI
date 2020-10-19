@@ -39,11 +39,10 @@ function getAllUsers(req, res, next) {
 }
 
 function register(req, res, next) {
-    const username = req.body.username
     const email = req.body.email.toLowerCase()
     const password = req.body.password
 
-    if (username !== undefined && email !== undefined && password !== undefined) {
+    if ( email !== undefined && password !== undefined) {
         User.find({ email: email })
             .exec()
             .then(result => {
@@ -52,7 +51,6 @@ function register(req, res, next) {
                         if (!err) {
                             const user = new User({
                                 _id: new mongoose.Types.ObjectId,
-                                username: username,
                                 email: email,
                                 password: data
                             })
