@@ -10,7 +10,8 @@ require('dotenv').config()
 router.get('/', getAllUsers)
 router.post('/register', register)
 router.post('/login', login)
-router.get('/:id/pets', getUsersAllPets)
+router.get('/:userId/pets', getUsersAllPets)
+router.post('/:userId/pets/add', userAddPet)
 
 function getAllUsers(req, res, next) {
     User.find()
@@ -170,14 +171,50 @@ function login(req, res, next) {
 }
 
 function getUsersAllPets(req, res, next) {
-    const userId = req.params.userId;
+    const userId = req.params.userId
 
-    if (id !== undefined) {
+    if (userId !== undefined) {
         Pet.find({ userId:  userId })
             .exec()
             .then(data => {
                 res.status(200).json({
                     data
+                })
+            })
+            .catch(err => {
+                console.log(err)
+                res.status(500).json({
+                    error: true,
+                    error_msg: err
+                })
+            })
+    } else {
+        res.status(400).json({
+            error: true,
+            error_msg: 'Not enough data provided'
+        })
+    }
+}
+
+function userAddPet(req, res, next) {
+    const userId = req.params.userId
+    const name = req.body.name
+    const birthDate = req.body.birthDate
+
+    if (userId !== undefined && name !== undefined) {
+        const pet = new Pet({
+            _id: new mongoose.Types.ObjectId,
+            userId: userId,
+            name: name,
+            birthDate: birthDate || ''
+        })
+
+        pet.save()
+            .then(result => {
+                res.status(201).json({
+                    error: false,
+                    message: 'Pet added to account',
+                    pet: pet
                 })
             })
             .catch(err => {
