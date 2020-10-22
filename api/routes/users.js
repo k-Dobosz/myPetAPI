@@ -5,13 +5,15 @@ const User = require('../models/user.model')
 const Pet = require('../models/pet.model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const auth = require('../auth')
 require('dotenv').config()
 
 router.get('/', getAllUsers)
 router.post('/register', register)
 router.post('/login', login)
-router.get('/:userId/pets', getUsersAllPets)
-router.post('/:userId/pets/add', userAddPet)
+router.get('/:userId', auth(), getUserById)
+router.get('/:userId/pets', auth(), getUsersAllPets)
+router.post('/:userId/pets/add', auth(), userAddPet)
 
 function getAllUsers(req, res, next) {
     User.find()
@@ -36,6 +38,40 @@ function getAllUsers(req, res, next) {
                 error_msg: err
             })
         })
+}
+
+function getUserById(req, res, next) {
+    const id = req.params.userId
+
+    if (id !== undefined) {
+        User.findById(id)
+            .exec()
+            .then(result => {
+                if (result) {
+                    res.status(200).json({
+                        error: false,
+                        data: result
+                    })
+                } else {
+                    req.status(404).json({
+                        error: true,
+                        error_msg: "No user found by provided id"
+                    })
+                }
+            })
+            .catch(err => {
+                res.status(500).json({
+                    error: true,
+                    error_msg: err
+                })
+            })
+    } else {
+        res.status(400).json({
+            error: true,
+            error_msg: "No enough data provided"
+        })
+    }
+
 }
 
 function register(req, res, next) {
