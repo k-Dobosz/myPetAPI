@@ -16,6 +16,7 @@ router.delete('/:userId', auth(), deleteUserById)
 router.post('/:userId/change_password', auth(), userChangePassword)
 router.get('/:userId/pets', auth(), getUsersAllPets)
 router.post('/:userId/pets/add', auth(), userAddPet)
+router.post('/refresh_token', refresh_token)
 
 function getAllUsers(req, res, next) {
     User.find()
@@ -173,7 +174,7 @@ function login(req, res, next) {
                                 const token = jwt.sign({
                                     userId: data.id
                                 }, process.env.JWT_SECRET, {
-                                    "expiresIn": "30m"
+                                    "expiresIn": "10s"
                                 })
                                 const refreshToken = jwt.sign({
                                     userId: data.id
@@ -350,6 +351,77 @@ function userChangePassword(req, res, next) {
                 error_msg: 'Passwords are the same'
             })
         }
+    } else {
+        res.status(400).json({
+            error: true,
+            error_msg: 'Not enough data provided'
+        })
+    }
+}
+
+function refresh_token(req, res, next) {
+    const token = req.body.token
+    const refresh_token = req.body.refresh_token
+
+    if (token !== undefined && refresh_token !== undefined) {
+        jwt.verify(refresh_token, process.env.JWT_SECRET_REFRESH, (err, decoded) => {
+            if (!err) {
+                User.findById(decoded.userId)
+                    .exec()
+                    .then((data) => {
+                        if (token === data.last_token && refresh_token === data.last_refresh_token) {
+                            const new_token = jwt.sign({
+                                    userId: data._id
+                                },
+                                process.env.JWT_SECRET,
+                                {
+                                    "expiresIn": "10s"
+                                })
+
+                            const new_refresh_token = jwt.sign({
+                                    userId: data._id
+                                },
+                                process.env.JWT_SECRET_REFRESH,
+                                {
+                                    "expiresIn": "7d"
+                                })
+
+                            User.updateOne({ _id: data._id}, { last_token: new_token, last_refresh_token: new_refresh_token })
+                                .exec()
+                                .then(() => {
+                                    res.status(200).json({
+                                        error: false,
+                                        new_token: new_token,
+                                        new_refresh_token: new_refresh_token
+                                    })
+                                })
+                                .catch(err => {
+                                    res.status(500).json({
+                                        error: true,
+                                        error_msg: err
+                                    })
+                                })
+
+                        } else {
+                            res.status(401).json({
+                                error: true,
+                                error_msg: 'Token refresh failed'
+                            })
+                        }
+                    })
+                    .catch(() => {
+                        res.status(404).json({
+                            error: true,
+                            error_msg: 'User with provided token not found'
+                        })
+                    })
+            } else {
+                res.status(401).json({
+                    error: true,
+                    error_msg: 'Token refresh failed'
+                })
+            }
+        })
     } else {
         res.status(400).json({
             error: true,
