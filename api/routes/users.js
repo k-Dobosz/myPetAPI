@@ -12,6 +12,7 @@ router.get('/', getAllUsers)
 router.post('/register', register)
 router.post('/login', login)
 router.get('/:userId', auth(), getUserById)
+router.delete('/:userId', auth(), deleteUserById)
 router.get('/:userId/pets', auth(), getUsersAllPets)
 router.post('/:userId/pets/add', auth(), userAddPet)
 
@@ -71,7 +72,33 @@ function getUserById(req, res, next) {
             error_msg: "No enough data provided"
         })
     }
+}
 
+function deleteUserById(req, res, next) {
+    const userId = req.params.userId
+
+    if (userId !== undefined) {
+        User.deleteOne({_id: userId})
+            .exec()
+            .then(result => {
+                console.log(result)
+                res.status(200).json({
+                    error: false,
+                    message: "User successfully deleted"
+                })
+            })
+            .catch(err => {
+                res.status(500).json({
+                    error: true,
+                    error_msg: err
+                })
+            })
+    } else {
+        res.status(400).json({
+            error: true,
+            error_msg: "No enough data provided"
+        })
+    }
 }
 
 function register(req, res, next) {

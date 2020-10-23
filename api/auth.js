@@ -18,7 +18,7 @@ module.exports = () => {
               })
           }
 
-          if (req.params.userId !== decoded.userId) {
+          if (req.params.userId !== decoded.userId && req.body.userId !== decoded.userId) {
               return res.status(401).json({
                   error: true,
                   error_msg: 'Auth failed'
