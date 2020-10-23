@@ -104,10 +104,12 @@ function deleteUserById(req, res, next) {
 }
 
 function register(req, res, next) {
+    const firstName = req.body.firstName
+    const lastName = req.body.lastName
     const email = req.body.email.toLowerCase()
     const password = req.body.password
 
-    if ( email !== undefined && password !== undefined) {
+    if (firstName !== undefined && lastName !== undefined && email !== undefined && password !== undefined) {
         User.find({ email: email })
             .exec()
             .then(result => {
@@ -116,13 +118,14 @@ function register(req, res, next) {
                         if (!err) {
                             const user = new User({
                                 _id: new mongoose.Types.ObjectId,
+                                firstName: firstName,
+                                lastName: lastName,
                                 email: email,
                                 password: data
                             })
 
                             user.save()
                                 .then(result => {
-                                    console.log(result)
                                     res.status(201).json({
                                         error: false,
                                         message: 'User created',
