@@ -13,6 +13,7 @@ router.post('/register', register)
 router.post('/login', login)
 router.get('/:userId', auth(), getUserById)
 router.delete('/:userId', auth(), deleteUserById)
+router.post('/:userId/change_password', auth(), userChangePassword)
 router.get('/:userId/pets', auth(), getUsersAllPets)
 router.post('/:userId/pets/add', auth(), userAddPet)
 
@@ -285,6 +286,70 @@ function userAddPet(req, res, next) {
                     error_msg: err
                 })
             })
+    } else {
+        res.status(400).json({
+            error: true,
+            error_msg: 'Not enough data provided'
+        })
+    }
+}
+
+function userChangePassword(req, res, next) {
+    const userId = req.params.userId
+    const old_password = req.body.old_password
+    const new_password = req.body.new_password
+
+    if (userId !== undefined && old_password !== undefined && new_password !== undefined) {
+        if (old_password !== new_password) {
+            User.findById(userId)
+                .exec()
+                .then(data => {
+                    bcrypt.compare(old_password, data.password, (err, result) => {
+                        if (result && !err) {
+                            bcrypt.hash(new_password, 10, (err, hash) => {
+                                if (!err) {
+                                    User.updateOne({_id: userId}, { password: hash })
+                                        .exec()
+                                        .then(() => {
+                                            res.status(200).json({
+                                                error: false,
+                                                message: "Password has been changed"
+                                            })
+                                        })
+                                        .catch(err => {
+                                            res.status(500).json({
+                                                error: true,
+                                                error_msg: err
+                                            })
+                                        })
+                                } else {
+                                    res.status(500).json({
+                                        error: true,
+                                        error_msg: err
+                                    })
+                                }
+                            })
+                        } else {
+                            res.status(500).json({
+                                error: true,
+                                error_msg: err
+                            })
+                        }
+                    })
+                })
+                .catch(err => {
+                    console.log(err)
+                    res.status(404).json({
+                        error: true,
+                        error_msg: err
+                    })
+                })
+        } else {
+            res.status(400).json({
+                error: true,
+                error_msg: 'Passwords are the same'
+            })
+        }
     } else {
         res.status(400).json({
             error: true,
