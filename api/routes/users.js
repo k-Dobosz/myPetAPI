@@ -174,7 +174,7 @@ function login(req, res, next) {
                                 const token = jwt.sign({
                                     userId: data.id
                                 }, process.env.JWT_SECRET, {
-                                    "expiresIn": "10s"
+                                    "expiresIn": "30m"
                                 })
                                 const refreshToken = jwt.sign({
                                     userId: data.id
@@ -375,7 +375,7 @@ function refresh_token(req, res, next) {
                                 },
                                 process.env.JWT_SECRET,
                                 {
-                                    "expiresIn": "10s"
+                                    "expiresIn": "30m"
                                 })
 
                             const new_refresh_token = jwt.sign({
