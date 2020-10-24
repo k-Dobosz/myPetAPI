@@ -3,6 +3,7 @@ const router = express.Router()
 const mongoose = require('mongoose')
 const User = require('../models/user.model')
 const Pet = require('../models/pet.model')
+const Collar = require('../models/collar.model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const auth = require('../auth')
@@ -266,28 +267,57 @@ function userAddPet(req, res, next) {
     const userId = req.params.userId
     const name = req.body.name
     const birthDate = req.body.birthDate
+    const code = req.body.code
 
     if (userId !== undefined && name !== undefined) {
-        const pet = new Pet({
-            _id: new mongoose.Types.ObjectId,
-            userId: userId,
-            name: name,
-            birthDate: birthDate || ''
-        })
+        Collar.findOne({ code: code })
+            .exec()
+            .then((result) => {
+                Pet.findOne({ collarId: result.id })
+                    .then((data) => {
+                        if (!data) {
+                            const pet = new Pet({
+                                _id: new mongoose.Types.ObjectId,
+                                collarId: result._id,
+                                userId: userId,
+                                name: name,
+                                birthDate: birthDate || ''
+                            })
 
-        pet.save()
-            .then(result => {
-                res.status(201).json({
-                    error: false,
-                    message: 'Pet added to account',
-                    pet: pet
-                })
+                            pet.save()
+                                .then(result => {
+                                    res.status(201).json({
+                                        error: false,
+                                        message: 'Pet added to account',
+                                        pet: pet
+                                    })
+                                })
+                                .catch(err => {
+                                    console.log(err)
+                                    res.status(500).json({
+                                        error: true,
+                                        error_msg: err
+                                    })
+                                })
+                        } else {
+                            res.status(409).json({
+                                error: true,
+                                error_msg: 'This collar is already in use'
+                            })
+                        }
+                    }).catch(err => {
+                        console.log(err)
+                        res.status(500).json({
+                            error: true,
+                            error_msg: err
+                        })
+                    })
             })
             .catch(err => {
                 console.log(err)
-                res.status(500).json({
+                res.status(404).json({
                     error: true,
-                    error_msg: err
+                    error_msg: "Collar with provided code not found"
                 })
             })
     } else {
