@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const User = require('../models/user.model')
 const Pet = require('../models/pet.model')
 const Collar = require('../models/collar.model')
+const Data = require('../models/data.model')
 const Notification = require('../models/notification.model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
@@ -18,6 +19,7 @@ router.delete('/:userId', auth(), deleteUserById)
 router.post('/:userId/change_password', auth(), userChangePassword)
 router.get('/:userId/pets', auth(), getUsersAllPets)
 router.get('/:userId/pets/:petId', auth(), userGetPetById)
+router.get('/:userId/pets/:petId/data', auth(), userGetPetCollarDataById)
 router.post('/:userId/pets/add', auth(), userAddPet)
 router.get('/:userId/notifications', auth(), getUserNotifications)
 router.delete('/:userId/notifications/:notificationId', auth(), deleteUserNotification)
@@ -362,6 +364,79 @@ function userGetPetById(req, res, next) {
         res.status(400).json({
             error: true,
             error_msg: 'Not enough data provided'
+        })
+    }
+}
+
+function userGetPetCollarDataById(req, res, next) {
+    const userId = req.params.userId
+    const petId = req.params.petId
+
+    if (petId !== undefined) {
+        Data.find({ petId: petId, type: "heart" })
+            .exec()
+            .then((heart) => {
+                Data.find({ petId: petId, type: "steps" })
+                    .exec()
+                    .then((steps) => {
+                        Data.find({ petId: petId, type: "temp" })
+                            .exec()
+                            .then((temp) => {
+                                Data.find({ petId: petId, type: "water" })
+                                    .exec()
+                                    .then((water) => {
+                                        Data.find({ petId: petId, type: "food" })
+                                            .exec()
+                                            .then((food) => {
+                                                res.status(200).json({
+                                                    error: false,
+                                                    data: {
+                                                        heart: heart,
+                                                        steps: steps,
+                                                        temp: temp,
+                                                        water: water,
+                                                        food: food,
+                                                    }
+                                                })
+                                            })
+                                            .catch((err) => {
+                                                res.status(500).json({
+                                                    error: true,
+                                                    error_msg: err
+                                                })
+                                            })
+                                    })
+                                    .catch((err) => {
+                                        res.status(500).json({
+                                            error: true,
+                                            error_msg: err
+                                        })
+                                    })
+                            })
+                            .catch((err) => {
+                                res.status(500).json({
+                                    error: true,
+                                    error_msg: err
+                                })
+                            })
+                    })
+                    .catch((err) => {
+                        res.status(500).json({
+                            error: true,
+                            error_msg: err
+                        })
+                    })
+            })
+            .catch((err) => {
+                res.status(500).json({
+                    error: true,
+                    error_msg: err
+                })
+            })
+    } else {
+        res.status(400).json({
+            error: true,
+            error_msg: "No enough data provided"
         })
     }
 }
