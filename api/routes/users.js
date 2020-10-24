@@ -20,6 +20,7 @@ router.get('/:userId/pets', auth(), getUsersAllPets)
 router.get('/:userId/pets/:petId', auth(), userGetPetById)
 router.post('/:userId/pets/add', auth(), userAddPet)
 router.get('/:userId/notifications', auth(), getUserNotifications)
+router.delete('/:userId/notifications/:notificationId', auth(), deleteUserNotification)
 router.post('/refresh_token', refresh_token)
 
 function getAllUsers(req, res, next) {
@@ -457,6 +458,34 @@ function getUserNotifications(req, res, next) {
         res.status(400).json({
             error: true,
             error_msg: 'Not enough data provided'
+        })
+    }
+}
+
+function deleteUserNotification(req, res, next) {
+    const userId = req.params.userId
+    const notificationId = req.params.notificationId
+
+    if (userId !== undefined) {
+        Notification.deleteOne({_id: notificationId})
+            .exec()
+            .then(result => {
+                console.log(result)
+                res.status(200).json({
+                    error: false,
+                    message: "Notification successfully deleted"
+                })
+            })
+            .catch(err => {
+                res.status(500).json({
+                    error: true,
+                    error_msg: err
+                })
+            })
+    } else {
+        res.status(400).json({
+            error: true,
+            error_msg: "No enough data provided"
         })
     }
 }
