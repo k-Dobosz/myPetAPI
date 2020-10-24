@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const User = require('../models/user.model')
 const Pet = require('../models/pet.model')
 const Collar = require('../models/collar.model')
+const Notification = require('../models/notification.model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const auth = require('../auth')
@@ -16,7 +17,9 @@ router.get('/:userId', auth(), getUserById)
 router.delete('/:userId', auth(), deleteUserById)
 router.post('/:userId/change_password', auth(), userChangePassword)
 router.get('/:userId/pets', auth(), getUsersAllPets)
+router.get('/:userId/pets/:petId', auth(), userGetPetById)
 router.post('/:userId/pets/add', auth(), userAddPet)
+router.get('/:userId/notifications', auth(), getUserNotifications)
 router.post('/refresh_token', refresh_token)
 
 function getAllUsers(req, res, next) {
@@ -328,6 +331,40 @@ function userAddPet(req, res, next) {
     }
 }
 
+function userGetPetById(req, res, next) {
+    const userId = req.params.userId
+    const petId = req.params.petId
+
+    if (userId !== undefined && petId !== undefined) {
+        Pet.findById(petId)
+            .exec()
+            .then(result => {
+                if (result) {
+                    res.status(200).json({
+                        error: false,
+                        data: result
+                    })
+                } else {
+                    req.status(404).json({
+                        error: true,
+                        error_msg: "No pet found by provided id"
+                    })
+                }
+            })
+            .catch(err => {
+                res.status(500).json({
+                    error: true,
+                    error_msg: err
+                })
+            })
+    } else {
+        res.status(400).json({
+            error: true,
+            error_msg: 'Not enough data provided'
+        })
+    }
+}
+
 function userChangePassword(req, res, next) {
     const userId = req.params.userId
     const old_password = req.body.old_password
@@ -384,6 +421,38 @@ function userChangePassword(req, res, next) {
                 error_msg: 'Passwords are the same'
             })
         }
+    } else {
+        res.status(400).json({
+            error: true,
+            error_msg: 'Not enough data provided'
+        })
+    }
+}
+
+function getUserNotifications(req, res, next) {
+    const userId = req.params.userId
+
+    if (userId !== undefined) {
+        Notification.find({ userId: userId })
+            .then((result) => {
+                if (result) {
+                    res.status(200).json({
+                        error: false,
+                        data: result
+                    })
+                } else {
+                    res.status(404).json({
+                        error: true,
+                        error_msg: 'No notifications found for provided user'
+                    })
+                }
+            })
+            .catch((err) => {
+                res.status(404).json({
+                    error: true,
+                    error_msg: err
+                })
+            })
     } else {
         res.status(400).json({
             error: true,
